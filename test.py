@@ -21,19 +21,16 @@ def validate(model, dataloader, device):
             psnr = calculate_psnr(outputs, inputs[1])
             psnr_values.append(psnr)
             # BGR to RGB
-            inputs[0] = inputs[0][:, [2, 1, 0], :, :]
-            outputs = outputs[:, [2, 1, 0], :, :]
-            # 色彩空间转换
-            # inputs[0] = inputs[0].cpu().numpy().transpose((0, 2, 3, 1))
-            # outputs = outputs.cpu().numpy().transpose((0, 2, 3, 1))
-            # plt.figure()
-            # plt.subplot(1, 2, 1)
-            # plt.imshow(inputs[0][0])
-            # plt.title("Rainy Image")
-            # plt.axis("off")
-            # plt.subplot(1, 2, 2)
-            # plt.imshow(outputs[0])
-            # plt.show()
+            original = inputs[0].squeeze().permute(1, 2, 0).cpu().numpy()
+            pred = outputs.squeeze().permute(1, 2, 0).cpu().numpy()
+            plt.figure()
+            plt.subplot(1, 2, 1)
+            plt.imshow(original)
+            plt.title("Rainy Image")
+            plt.axis("off")
+            plt.subplot(1, 2, 2)
+            plt.imshow(pred)
+            plt.show()
             
     avg_psnr = sum(psnr_values) / len(psnr_values)
     return avg_psnr
@@ -46,7 +43,7 @@ def main():
     transforms = []
     transforms.append(CropWithResize(config.crop_size, False))
     transforms.append(ToTensor())
-    transforms.append(Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]))
+    # transforms.append(Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]))
     transforms = Compose(transforms)
     
     # 加载验证数据集
@@ -55,7 +52,7 @@ def main():
     val_loader = DataLoader(val_dataset, batch_size=config.tbatch_size, shuffle=False)
     
     # 加载训练好的模型
-    model_path = config.checkpoint_dir + "/model_epoch_80.pth"  # 假定这是最佳模型的路径
+    model_path = config.checkpoint_dir + "/model_epoch_70.pth"  # 假定这是最佳模型的路径
     model = DerainModel(config).to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
     

@@ -42,7 +42,7 @@ def main():
     transforms = []
     transforms.append(CropWithResize(config.crop_size))
     transforms.append(ToTensor())
-    transforms.append(Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]))
+    # transforms.append(Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]))
     transforms = Compose(transforms)
     # 加载数据集
     train_dataset = RainDataset(root_dir=config.train_data_dir, transform=transforms)
