@@ -6,7 +6,7 @@ class Config:
         self.batch_size = 2
         self.tbatch_size = 1
         self.epochs = 200
-        self.learning_rate = 0.0002
+        self.learning_rate = 1e-4
         self.num_workers = 4  # 数据加载线程数
         self.weight_decay = 0
         self.cosine_eta_min = 1e-8

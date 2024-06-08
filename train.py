@@ -30,9 +30,9 @@ def train(model, dataloader, optimizer, scheduler, device):
         loss = model.compute_loss()  # 在模型内部计算损失
         loss.backward()  # 反向传播
         optimizer.step()  # 更新权重
-        # scheduler.step()
+        scheduler.step()
         running_loss += loss.item()
-        adjust_learning_rate(model.config, i, optimizer)
+        # adjust_learning_rate(model.config, i, optimizer)
     return running_loss / (i + 1)
 
 def main():
@@ -42,7 +42,7 @@ def main():
     transforms = []
     transforms.append(CropWithResize(config.crop_size))
     transforms.append(ToTensor())
-    transforms.append(Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]))
+    # transforms.append(Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]))
     transforms = Compose(transforms)
     # 加载数据集
     train_dataset = RainDataset(root_dir=config.train_data_dir, transform=transforms)
