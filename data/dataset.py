@@ -6,6 +6,7 @@ import numpy as np
 import torch
 from torchvision import transforms
 from torch.utils.data import Dataset
+from torchvision.transforms.functional import crop
 
 class RainDataset(Dataset):
     """
@@ -15,10 +16,11 @@ class RainDataset(Dataset):
         root_dir (str): Root directory containing the 'rainy' and 'non_rainy' subdirectories.
         transform (callable, optional): Optional transform to be applied on a sample.
     """
-    def __init__(self, root_dir, transform=None):
+    def __init__(self, root_dir, crop=None, transform=None):
         self.rainy_dir = os.path.join(root_dir, 'rain')
         self.non_rainy_dir = os.path.join(root_dir, 'norain')
-        self.images = [f[:-4] for f in os.listdir(self.rainy_dir) if f.endswith('.png')] 
+        self.images = [f[:-4] for f in os.listdir(self.rainy_dir) if f.endswith('.png')]
+        self.crop = crop 
         self.transform = transform
 
     def __len__(self):
@@ -36,6 +38,11 @@ class RainDataset(Dataset):
         # Load images
         rainy_image = Image.open(rainy_path).convert('RGB')
         non_rainy_image = Image.open(non_rainy_path).convert('RGB')
+
+        if self.crop:
+            crop_args = self.crop(rainy_image)
+            rainy_image = crop(rainy_image, *crop_args)
+            non_rainy_image = crop(non_rainy_image, *crop_args)
         
         if self.transform:
             rainy_image = self.transform(rainy_image)
@@ -108,7 +115,7 @@ class DenoisingDataset(Dataset):
         img_rainy = cv2.cvtColor(img_rainy, cv2.COLOR_BGR2RGB)
         img_gt = cv2.cvtColor(img_gt, cv2.COLOR_BGR2RGB)
 
-        cropper = CenterCrop(img_gt.shape[:2], (128, 128))
+        cropper = RandomCrop(img_gt.shape[:2], (128, 128))
         img_rainy = cropper(img_rainy)
         img_gt = cropper(img_gt)
         # random rotate and horizontal flip

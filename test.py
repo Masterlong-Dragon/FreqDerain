@@ -14,15 +14,20 @@ def validate(model, dataloader, device):
     """
     model.eval()
     psnr_values = []
+    mean = torch.tensor([0.5, 0.5, 0.5])  # 每个通道的均值
+    std = torch.tensor([0.5, 0.5, 0.5])   # 每个通道的标准差
     with torch.no_grad():
         for i, inputs in enumerate(dataloader):
             inputs = [inp.to(device) for inp in inputs]
             outputs = model(inputs)
+            # 恢复原始尺度
+            outputs = outputs.cpu() * std.view(3, 1, 1) + mean.view(3, 1, 1)
+            inputs = [inp.cpu() * std.view(3, 1, 1) + mean.view(3, 1, 1) for inp in inputs]
             psnr = calculate_psnr(outputs, inputs[1])
             psnr_values.append(psnr)
             # BGR to RGB
-            original = inputs[0].squeeze().permute(1, 2, 0).cpu().numpy()
-            pred = outputs.squeeze().permute(1, 2, 0).cpu().numpy()
+            original = inputs[0].squeeze().permute(1, 2, 0).numpy()
+            pred = outputs.squeeze().permute(1, 2, 0).numpy()
             plt.figure()
             plt.subplot(1, 2, 1)
             plt.imshow(original)
@@ -41,18 +46,18 @@ def main():
     
     # 数据预处理
     transforms = []
-    transforms.append(CropWithResize(config.crop_size, False))
+    # transforms.append(CropWithResize(config.crop_size, False))
     transforms.append(ToTensor())
-    # transforms.append(Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]))
+    transforms.append(Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]))
     transforms = Compose(transforms)
     
     # 加载验证数据集
     # 注意：这里假设验证数据集包含雨天图像及其对应的干净图像
-    val_dataset = RainDataset(root_dir=config.test_data_dir, transform=transforms)
+    val_dataset = RainDataset(root_dir=config.train_data_dir, transform=transforms, crop=CropWithResize(config.crop_size, False))
     val_loader = DataLoader(val_dataset, batch_size=config.tbatch_size, shuffle=False)
     
     # 加载训练好的模型
-    model_path = config.checkpoint_dir + "/model_epoch_70.pth"  # 假定这是最佳模型的路径
+    model_path = config.checkpoint_dir + "/model_epoch_200.pth"  # 假定这是最佳模型的路径
     model = DerainModel(config).to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
     
