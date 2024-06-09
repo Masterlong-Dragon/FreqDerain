@@ -42,7 +42,7 @@ class CropWithResize(object):
                 i = (resized_height - th) // 2
                 j = (resized_width - tw) // 2
 
-        return crop(img, i, j, th, tw)
+        return i, j, th, tw
 
     def __call__(self, img):
         return self.get_params(img)

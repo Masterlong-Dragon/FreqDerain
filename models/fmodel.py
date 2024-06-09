@@ -60,12 +60,12 @@ class FPNet(nn.Module):
         out_1_amp = torch.abs(out_1_fft)
         out_1_phase = torch.angle(out_1_fft)
 
-        image_fft = torch.fft.fft2(image, dim=(-2, -1))
-        # image_amp = torch.abs(image_fft)
-        image_phase = torch.angle(image_fft)
-        image_inverse = torch.fft.ifft2(out_1_amp*torch.exp(1j*image_phase), dim=(-2, -1)).real
+        # image_fft = torch.fft.fft2(image, dim=(-2, -1))
+        # # image_amp = torch.abs(image_fft)
+        # image_phase = torch.angle(image_fft)
+        # image_inverse = torch.fft.ifft2(out_1_amp*torch.exp(1j*image_phase), dim=(-2, -1)).real
 
-        x2 = self.conv_02(image_inverse)
+        x2 = self.conv_02(out_1)
         x2 = self.cat12(torch.cat([x2, sam_feature], dim=1))
         blocks = []
         for i, down in enumerate(self.down_path_2):

@@ -51,4 +51,4 @@ class DerainModel(nn.Module):
 
         l_perc = self.criterionSPL(self.out_2, self.gt) + self.criterionSPL(self.out_1, gt_first_stage)
 
-        return 0.1 * l1 + l2 + 0.05 * l_fft + 0.05 * l_amp + l_perc * 0.1
+        return l1 * 0.1 + l2 + 0.05 * l_fft + 0.05 * l_amp + l_perc * 0.5
