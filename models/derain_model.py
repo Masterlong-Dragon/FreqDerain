@@ -29,9 +29,21 @@ class DerainModel(nn.Module):
     
     def compute_loss(self):
 
+        # fft正则项
+        gt_fft = torch.fft.fft2(self.true_target, dim=(-2, -1))
+        fake_fft = torch.fft.fft2(self.fake_target, dim=(-2, -1))
+        # 相位
+        gt_phase = torch.angle(gt_fft)
+        fake_phase = torch.angle(fake_fft)
+        # 幅度
+        gt_amp = torch.abs(gt_fft)
+        fake_amp = torch.abs(fake_fft)
+        # 计算fft正则项
+        fft_loss = self.criterion_L1(fake_phase, gt_phase) + self.criterion_L1(fake_amp, gt_amp)
+
         Pixellevel_L1_Loss = self.criterion_L1(self.fake_target, self.true_target)
         ssim_loss = -self.criterion_ssim(self.true_target, self.fake_target)
         SA_perceptual_loss = self.criterionSPL(self.fake_target, self.true_target)
-        generator_loss = Pixellevel_L1_Loss + 0.2*ssim_loss + 0.8*SA_perceptual_loss
+        generator_loss = Pixellevel_L1_Loss + 0.2*ssim_loss + 0.8*SA_perceptual_loss + 0.01*fft_loss
 
         return generator_loss

@@ -16,7 +16,7 @@ config = Config()
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 transforms = []
-transforms.append(CropWithResize(config.crop_size, False))
+# transforms.append(CropWithResize(config.crop_size, False))
 transforms.append(ToTensor())
 # transforms.append(Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]))
 transforms = Compose(transforms)
@@ -31,9 +31,20 @@ train_loader2 = DataLoader(train_dataset2, batch_size=config.batch_size, shuffle
 rainy_image, non_rainy_image = train_dataset[0]
 rainy_image2, non_rainy_image2 = train_dataset2[0]
 # 比较属性
-print(rainy_image.shape, non_rainy_image.shape)
-print(rainy_image2.shape, non_rainy_image2.shape)
-# 比较值
-print(rainy_image[0, 0, 0], rainy_image2[0, 0, 0])
-print(rainy_image[0, 0, 1], rainy_image2[0, 0, 1])
-print(rainy_image[0, 0, 2], rainy_image2[0, 0, 2])
+# print(rainy_image.shape, non_rainy_image.shape)
+# print(rainy_image2.shape, non_rainy_image2.shape)
+# # 比较值
+# print(rainy_image[0, 0, 0], rainy_image2[0, 0, 0])
+# print(rainy_image[0, 0, 1], rainy_image2[0, 0, 1])
+# print(rainy_image[0, 0, 2], rainy_image2[0, 0, 2])
+
+import ptwt, pywt, torch
+import numpy as np
+from scipy import datasets
+# face = np.transpose(datasets.face(),
+#                     [2, 0, 1]).astype(np.float64)
+pytorch_face = rainy_image
+coefficients = ptwt.wavedec2(pytorch_face, pywt.Wavelet("haar"),
+                             level=2, mode="constant")
+reconstruction = ptwt.waverec2(coefficients, pywt.Wavelet("haar"))
+print(reconstruction.shape)

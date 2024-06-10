@@ -6,6 +6,48 @@ import numpy as np
 import math
 from models.spectral import SpectralNorm
 
+from models.model_utils import FreqBlock, ConvBlock
+
+class DownBlockWithFreq(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super(DownBlockWithFreq, self).__init__()
+        # 确保额外的卷积层用于调整 FreqBlock 的输出通道数
+        self.freq_to_out_channels = nn.Conv2d(in_channels, out_channels, kernel_size=1) if in_channels != out_channels else nn.Identity()
+        self.freq_block = FreqBlock(in_channels)
+        self.attn = Self_Attn(out_channels, 'relu')  # 注意力机制应用于空间路径输出前
+        self.down = ConvBlock(in_channels, out_channels, stride=2)
+        self.down_freq = ConvBlock(in_channels, out_channels, stride=2)
+        self.fusion_conv = ConvBlock(2 * out_channels, out_channels)
+
+    def forward(self, spatial_in, freq_in):
+        spatial_out = self.down(spatial_in)  # 下采样
+        spatial_att = self.attn(spatial_out)  # 应用注意力
+        # 频域路径处理，先通过 FreqBlock 再下采样
+        freq_out = self.freq_block(freq_in)
+        # freq_out_adjusted = self.freq_to_out_channels(freq_out)  # 调整 FreqBlock 输出通道数
+        freq_out_down = self.down_freq(freq_out)
+        
+        # 确保融合前的通道数一致
+        fused = torch.cat([spatial_att, freq_out_down], dim=1)
+        fused = self.fusion_conv(fused)  # 融合后通过卷积调整通道至 out_channels
+        
+        # 返回空间路径输出、频域路径输出（用于跳连）及融合后的输出
+        return spatial_out, freq_out_down, fused
+    
+class UpBlockWithSkip(nn.Module):
+    def __init__(self, in_channels, out_channels, skip_channels):
+        super(UpBlockWithSkip, self).__init__()
+        self.up = nn.ConvTranspose2d(in_channels, out_channels // 2, kernel_size=2, stride=2)
+        self.freq_block = FreqBlock(out_channels)
+        self.freq_to_out_channels = nn.Conv2d(skip_channels + out_channels // 2, out_channels, kernel_size=1) if out_channels // 2 != out_channels else nn.Identity()
+
+    def forward(self, x, skip_conn):
+        x = self.up(x)
+        x = torch.cat([x, skip_conn], dim=1)
+        x = self.freq_to_out_channels(x)
+        x = self.freq_block(x)
+        return x
+
 # ----------------------------------------
 #         Initialize the networks
 # ----------------------------------------
@@ -47,15 +89,16 @@ class Generator (nn.Module):
         out_channel = 64
         # down = maxpooling+3*conv
         self.inc = TripleConvs(3, 64)
-        self.conv1 = Down(64, 128)
-        self.conv2 = Down(128, 256)
-        self.conv3 = Down(256, 512)
-        self.conv4 = Down(512, 512)
-        self.FeatureSA = Self_Attn(512, 'relu')  #self-attention
+        self.freq_inc = FreqBlock(64)
+        self.conv1 = DownBlockWithFreq(64, 128)
+        self.conv2 = DownBlockWithFreq(128, 256)
+        self.conv3 = DownBlockWithFreq(256, 512)
+        self.conv4 = DownBlockWithFreq(512, 512)
+        self.FeatureSA = FreqBlock(512)  
         # up = deconv + 3*conv
-        self.conv6 = Up(512, 512, 512)
-        self.conv7 = Up(256, 512, 256)
-        self.conv8 = Up(128, 256, out_channel)
+        self.conv6 = UpBlockWithSkip(512, 256, 512)
+        self.conv7 = UpBlockWithSkip(256, 128, 256)
+        self.conv8 = UpBlockWithSkip(128, 64, 128)
         self.outc = nn.Sequential(
             nn.ConvTranspose2d(out_channel, out_channel, 4, 2, 1),
             nn.Conv2d(out_channel, out_channel, 1, 1, 0)
@@ -152,15 +195,16 @@ class Generator (nn.Module):
         #down-sampling
         Rainy_image = Rainy_image_x
         inc = self.inc(Rainy_image_x)
-        conv1 = self.conv1(inc)
-        conv2 = self.conv2(conv1)
-        conv3 = self.conv3(conv2)
-        conv4 = self.conv4(conv3)
-        feature_sa = self.FeatureSA(conv4)  #self-attention
+        freq_inc = self.freq_inc(inc)
+        spatial_out1, freq_out1, fused1 = self.conv1(inc, freq_inc)
+        spatial_out2, freq_out2, fused2 = self.conv2(spatial_out1, fused1)
+        spatial_out3, freq_out3, fused3 = self.conv3(spatial_out2, fused2)
+        spatial_out4, freq_out4, fused4 = self.conv4(spatial_out3, fused3)
+        feature_sa = self.FeatureSA(fused4)  #self-attention
         #up-sampling + crop
-        conv6 = self.conv6(conv3, feature_sa)
-        conv7 = self.conv7(conv2, conv6)
-        conv8 = self.conv8(conv1, conv7)
+        conv6 = self.conv6(feature_sa, freq_out3)
+        conv7 = self.conv7(conv6, freq_out2)
+        conv8 = self.conv8(conv7, freq_out1)
         # return channel K*K*N
         feature_map = self.outc(conv8)
         feature_map = self.fm(feature_map)  #feature map
