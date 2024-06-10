@@ -44,6 +44,6 @@ class DerainModel(nn.Module):
         Pixellevel_L1_Loss = self.criterion_L1(self.fake_target, self.true_target)
         ssim_loss = -self.criterion_ssim(self.true_target, self.fake_target)
         SA_perceptual_loss = self.criterionSPL(self.fake_target, self.true_target)
-        generator_loss = Pixellevel_L1_Loss + 0.2*ssim_loss + 0.8*SA_perceptual_loss + 0.01*fft_loss
+        generator_loss = Pixellevel_L1_Loss + 0.2*ssim_loss + 0.8*SA_perceptual_loss + 0.005*fft_loss
 
         return generator_loss

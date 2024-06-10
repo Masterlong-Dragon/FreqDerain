@@ -3,7 +3,7 @@ import os
 class Config:
     def __init__(self):
         # 基本训练参数
-        self.batch_size = 1
+        self.batch_size = 2
         self.tbatch_size = 1
         self.epochs = 200
         self.learning_rate = 0.0002
