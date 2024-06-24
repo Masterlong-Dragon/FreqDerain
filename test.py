@@ -57,7 +57,7 @@ def main():
     val_loader = DataLoader(val_dataset, batch_size=config.tbatch_size, shuffle=False)
     
     # 加载训练好的模型
-    model_path = config.checkpoint_dir + "/model_epoch_200.pth"  # 假定这是最佳模型的路径
+    model_path = config.checkpoint_dir + "/ghost/model_epoch_200.pth"  # 假定这是最佳模型的路径
     model = DerainModel(config).to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
     

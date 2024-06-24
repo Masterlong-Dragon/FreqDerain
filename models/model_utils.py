@@ -3,6 +3,8 @@ import ptwt
 import torch
 import torch.nn as nn
 
+from models.ghostnetv3 import GhostModule
+
 class LayerNorm(nn.Module):
     def __init__(self, channels):
         super(LayerNorm, self).__init__()
@@ -122,11 +124,13 @@ class FourierTransformBranch(nn.Module):
         return x_back.real
 
 class FreqBlock(nn.Module):
-    def __init__(self, in_channels):
+    def __init__(self, in_channels, out_channels=None):
         super(FreqBlock, self).__init__()
+        if out_channels is None:
+            out_channels = in_channels
         # 三个分支
         self.spatial_branch = nn.Sequential(
-            ResidualBlock(in_channels),
+            ResidualBlock(in_channels)
         )
         self.freq_band_branch = nn.Sequential(
             FreqBandBranch(in_channels),
@@ -135,7 +139,7 @@ class FreqBlock(nn.Module):
             FourierTransformBranch(in_channels),
         )
          # 新增：用于融合分支输出的1x1卷积层
-        self.concat_conv = ConvBlock(3*in_channels, in_channels, kernel_size=1, padding=0)
+        self.concat_conv = GhostModule(3*in_channels, out_channels, kernel_size=1, stride=1)
         self.out_channels = in_channels
 
     def forward(self, x):

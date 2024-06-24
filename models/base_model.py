@@ -8,6 +8,8 @@ from models.spectral import SpectralNorm
 
 from models.model_utils import FreqBlock, ConvBlock
 
+from models.ghostnetv3 import GhostModule
+
 class DownBlockWithFreq(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(DownBlockWithFreq, self).__init__()
@@ -15,9 +17,9 @@ class DownBlockWithFreq(nn.Module):
         self.freq_to_out_channels = nn.Conv2d(in_channels, out_channels, kernel_size=1) if in_channels != out_channels else nn.Identity()
         self.freq_block = FreqBlock(in_channels)
         self.attn = Self_Attn(out_channels, 'relu')  # 注意力机制应用于空间路径输出前
-        self.down = ConvBlock(in_channels, out_channels, stride=2)
-        self.down_freq = ConvBlock(in_channels, out_channels, stride=2)
-        self.fusion_conv = ConvBlock(2 * out_channels, out_channels)
+        self.down = GhostModule(in_channels, out_channels, stride=2)
+        self.down_freq = GhostModule(in_channels, out_channels, stride=2)
+        self.fusion_conv = GhostModule(2 * out_channels, out_channels)
 
     def forward(self, spatial_in, freq_in):
         spatial_out = self.down(spatial_in)  # 下采样
@@ -39,7 +41,7 @@ class UpBlockWithSkip(nn.Module):
         super(UpBlockWithSkip, self).__init__()
         self.up = nn.ConvTranspose2d(in_channels, out_channels // 2, kernel_size=2, stride=2)
         self.freq_block = FreqBlock(out_channels)
-        self.freq_to_out_channels = nn.Conv2d(skip_channels + out_channels // 2, out_channels, kernel_size=1) if out_channels // 2 != out_channels else nn.Identity()
+        self.freq_to_out_channels = GhostModule(skip_channels + out_channels // 2, out_channels, kernel_size=1) if out_channels // 2 != out_channels else nn.Identity()
 
     def forward(self, x, skip_conn):
         x = self.up(x)
