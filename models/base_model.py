@@ -117,16 +117,18 @@ class Generator (nn.Module):
             nn.ReLU()
             )
         self.rd_conv3 = nn.Sequential(
-            nn.Conv2d(128, 128, 3, 1, 1),
-            nn.ReLU()
+            # nn.Conv2d(128, 128, 3, 1, 1),
+            # nn.ReLU()
+            FreqBlock(128)
             )
         self.rd_conv4 = nn.Sequential(
             nn.Conv2d(128, 256, 3, 2, 1),
             nn.ReLU()
             )
         self.rd_conv5 = nn.Sequential(
-            nn.Conv2d(256, 256, 3, 1, 1),
-            nn.ReLU()
+            # nn.Conv2d(256, 256, 3, 1, 1),
+            # nn.ReLU()
+            FreqBlock(256)
             )
         self.rd_conv6 = nn.Sequential(
             nn.Conv2d(256, 256, 3, 1, 1),
