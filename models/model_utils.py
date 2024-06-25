@@ -2,8 +2,46 @@ from typing import List
 import ptwt
 import torch
 import torch.nn as nn
+from functools import partial
 
 from models.ghostnetv3 import GhostModule
+
+class GatedCNNBlock(nn.Module):
+    r""" Our implementation of Gated CNN Block: https://arxiv.org/pdf/1612.08083
+    Args: 
+        conv_ratio: control the number of channels to conduct depthwise convolution.
+            Conduct convolution on partial channels can improve paraitcal efficiency.
+            The idea of partial channels is from ShuffleNet V2 (https://arxiv.org/abs/1807.11164) and 
+            also used by InceptionNeXt (https://arxiv.org/abs/2303.16900) and FasterNet (https://arxiv.org/abs/2303.03667)
+    """
+    def __init__(self, dim, expansion_ratio=8/3, kernel_size=7, conv_ratio=1.0,
+                 norm_layer=partial(nn.LayerNorm,eps=1e-6), 
+                 act_layer=nn.GELU,
+                 padding=None,
+                 dilation=1,
+                 **kwargs):
+        super().__init__()
+        if padding is None:
+            padding = kernel_size // 2
+        self.norm = norm_layer(dim)
+        hidden = int(expansion_ratio * dim)
+        self.fc1 = nn.Linear(dim, hidden * 2)
+        self.act = act_layer()
+        conv_channels = int(conv_ratio * dim)
+        self.split_indices = (hidden, hidden - conv_channels, conv_channels)
+        self.conv = nn.Conv2d(conv_channels, conv_channels, kernel_size=kernel_size, padding=padding, dilation=dilation, groups=conv_channels)
+        self.fc2 = nn.Linear(hidden, dim)
+
+    def forward(self, x):
+        x = x.permute(0, 2, 3, 1) # [B, C, H, W] -> [B, H, W, C]
+        shortcut = x # [B, H, W, C]
+        x = self.norm(x)
+        g, i, c = torch.split(self.fc1(x), self.split_indices, dim=-1)
+        c = c.permute(0, 3, 1, 2) # [B, H, W, C] -> [B, C, H, W]
+        c = self.conv(c)
+        c = c.permute(0, 2, 3, 1) # [B, C, H, W] -> [B, H, W, C]
+        x = self.fc2(self.act(g) * torch.cat((i, c), dim=-1))
+        return (x + shortcut).permute(0, 3, 1, 2) # [B, H, W, C] -> [B, C, H, W]
 
 class LayerNorm(nn.Module):
     def __init__(self, channels):
@@ -28,6 +66,17 @@ class ConvBlock(nn.Module):
         x = self.conv(x)
         x = self.norm(x)
         x = self.relu(x)
+        return x
+
+class DownLayer(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=2, padding=1):
+        super(DownLayer, self).__init__()
+        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride=stride, padding=padding)
+        self.norm = nn.BatchNorm2d(out_channels)
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.norm(x)
         return x
     
 # DWConv
@@ -130,7 +179,7 @@ class FreqBlock(nn.Module):
             out_channels = in_channels
         # 三个分支
         self.spatial_branch = nn.Sequential(
-            ResidualBlock(in_channels)
+            ResidualBlock(in_channels),
         )
         self.freq_band_branch = nn.Sequential(
             FreqBandBranch(in_channels),
