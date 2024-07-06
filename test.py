@@ -26,16 +26,16 @@ def validate(model, dataloader, device):
             psnr = calculate_psnr(outputs, inputs[1])
             psnr_values.append(psnr)
             # # BGR to RGB
-            original = inputs[0].squeeze().permute(1, 2, 0).numpy()
-            pred = outputs.squeeze().permute(1, 2, 0).numpy()
-            plt.figure()
-            plt.subplot(1, 2, 1)
-            plt.imshow(original)
-            plt.title("Rainy Image")
-            plt.axis("off")
-            plt.subplot(1, 2, 2)
-            plt.imshow(pred)
-            plt.show()
+            # original = inputs[0].squeeze().permute(1, 2, 0).numpy()
+            # pred = outputs.squeeze().permute(1, 2, 0).numpy()
+            # plt.figure()
+            # plt.subplot(1, 2, 1)
+            # plt.imshow(original)
+            # plt.title("Rainy Image")
+            # plt.axis("off")
+            # plt.subplot(1, 2, 2)
+            # plt.imshow(pred)
+            # plt.show()
             
     avg_psnr = sum(psnr_values) / len(psnr_values)
     return avg_psnr
@@ -57,7 +57,7 @@ def main():
     val_loader = DataLoader(val_dataset, batch_size=config.tbatch_size, shuffle=False)
     
     # 加载训练好的模型
-    model_path = r"E:\downloads\model_epoch_50.pth" # 假定这是最佳模型的路径
+    model_path = r"E:\downloads\best_model-70.pth" # 假定这是最佳模型的路径
     model = DerainModel(config).to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
     
