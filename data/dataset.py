@@ -19,7 +19,12 @@ class RainDataset(Dataset):
     def __init__(self, root_dir, crop=None, transform=None):
         self.rainy_dir = os.path.join(root_dir, 'rain')
         self.non_rainy_dir = os.path.join(root_dir, 'norain')
-        self.images = [f[:-4] for f in os.listdir(self.rainy_dir) if f.endswith('.png')]
+        # self.images = [f[:-4] for f in os.listdir(self.rainy_dir) if f.endswith('.jpg')]
+        self.images = []
+        for i in range(1 + 3, 4 + 3):
+            for f in os.listdir(self.rainy_dir):
+                if f.endswith('_' + str(i) + '.jpg'):
+                    self.images.append(f[:-4])
         self.crop = crop 
         self.transform = transform
 
@@ -32,8 +37,8 @@ class RainDataset(Dataset):
         image_name = self.images[idx]
         
         # Construct paths for rainy and non-rainy images
-        rainy_path = os.path.join(self.rainy_dir, image_name + '.png')
-        non_rainy_path = os.path.join(self.non_rainy_dir, image_name + '.png')  # Assuming cleaned images have '_clean' suffix
+        rainy_path = os.path.join(self.rainy_dir, image_name + '.jpg')
+        non_rainy_path = os.path.join(self.non_rainy_dir, image_name.split("_")[0] + '.jpg')  
         
         # Load images
         rainy_image = Image.open(rainy_path).convert('RGB')
@@ -49,7 +54,7 @@ class RainDataset(Dataset):
             non_rainy_image = self.transform(non_rainy_image)
         
         return rainy_image, non_rainy_image
-    
+
 class Rain100LDataset(Dataset):
     """
     Custom dataset for rain removal tasks, where each rainy image has a one-to-one correspondence with a non-rainy image.
@@ -61,7 +66,7 @@ class Rain100LDataset(Dataset):
     def __init__(self, root_dir, crop=None, transform=None):
         self.rainy_dir = os.path.join(root_dir, 'rain')
         self.non_rainy_dir = os.path.join(root_dir, 'norain')
-        self.images = [f[:-4] for f in os.listdir(self.rainy_dir) if f.endswith('.png')]
+        self.images = [f[:-4] for f in os.listdir(self.rainy_dir) if f.endswith('.png') and int(f.split("x2")[0].split("-")[-1]) <= 900]
         self.crop = crop 
         self.transform = transform
 
@@ -91,6 +96,7 @@ class Rain100LDataset(Dataset):
             non_rainy_image = self.transform(non_rainy_image)
         
         return rainy_image, non_rainy_image
+    
 
 class RandomCrop(object):
     def __init__(self, image_size, crop_size):
@@ -135,7 +141,7 @@ def get_files(path):
         files.sort()    
         
         for name in files:
-            #if name.split('.')[1] != 'png':
+            #if name.split('.')[1] != 'jpg':
             #    continue
             file_rainy = path_rainy + "/" + name
             file_gt = path_gt + "/" + name
