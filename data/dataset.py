@@ -50,6 +50,47 @@ class RainDataset(Dataset):
         
         return rainy_image, non_rainy_image
     
+class Rain100LDataset(Dataset):
+    """
+    Custom dataset for rain removal tasks, where each rainy image has a one-to-one correspondence with a non-rainy image.
+    
+    Args:
+        root_dir (str): Root directory containing the 'rainy' and 'non_rainy' subdirectories.
+        transform (callable, optional): Optional transform to be applied on a sample.
+    """
+    def __init__(self, root_dir, crop=None, transform=None):
+        self.rainy_dir = os.path.join(root_dir, 'rain')
+        self.non_rainy_dir = os.path.join(root_dir, 'norain')
+        self.images = [f[:-4] for f in os.listdir(self.rainy_dir) if f.endswith('.png')]
+        self.crop = crop 
+        self.transform = transform
+
+    def __len__(self):
+        """Return the total number of samples in the dataset."""
+        return len(self.images)
+
+    def __getitem__(self, idx):
+        """Get an item from the dataset."""
+        image_name = self.images[idx]
+        
+        # Construct paths for rainy and non-rainy images
+        rainy_path = os.path.join(self.rainy_dir, image_name + '.png')
+        non_rainy_path = os.path.join(self.non_rainy_dir, image_name.split("x2")[0] + '.png')  # Assuming cleaned images have '_clean' suffix
+        
+        # Load images
+        rainy_image = Image.open(rainy_path).convert('RGB')
+        non_rainy_image = Image.open(non_rainy_path).convert('RGB')
+
+        if self.crop:
+            crop_args = self.crop(rainy_image)
+            rainy_image = crop(rainy_image, *crop_args)
+            non_rainy_image = crop(non_rainy_image, *crop_args)
+        
+        if self.transform:
+            rainy_image = self.transform(rainy_image)
+            non_rainy_image = self.transform(non_rainy_image)
+        
+        return rainy_image, non_rainy_image
 
 class RandomCrop(object):
     def __init__(self, image_size, crop_size):

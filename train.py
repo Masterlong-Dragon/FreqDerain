@@ -55,6 +55,10 @@ def main():
     scheduler = model.scheduler
 
     logger = Logger(config.log_dir)
+    
+    
+    # 最好的模型
+    best_loss = float("inf")
     # 训练循环
     num_epochs = config.epochs
     for epoch in range(num_epochs):
@@ -69,9 +73,15 @@ def main():
         
         logger.log("train_loss", train_loss, epoch)
         
+        if train_loss < best_loss:
+            best_loss = train_loss
+            torch.save(model.state_dict(), f"{config.checkpoint_dir}/best_model.pth")
+            print(f"Best model saved.{epoch+1}")
+        
         # 模型保存逻辑可以根据需要添加
         if (epoch+1) % config.save_model_interval == 0:
             torch.save(model.state_dict(), f"{config.checkpoint_dir}/model_epoch_{epoch+1}.pth")
+        
 
 if __name__ == "__main__":
     main()

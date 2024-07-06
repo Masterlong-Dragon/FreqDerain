@@ -14,7 +14,7 @@ class DownBlockWithFreq(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(DownBlockWithFreq, self).__init__()
         # 确保额外的卷积层用于调整 FreqBlock 的输出通道数
-        self.freq_to_out_channels = nn.Conv2d(in_channels, out_channels, kernel_size=1) if in_channels != out_channels else nn.Identity()
+        # self.freq_to_out_channels = nn.Conv2d(in_channels, out_channels, kernel_size=1) if in_channels != out_channels else nn.Identity()
         self.freq_block = FreqBlock(in_channels)
         self.attn = Self_Attn(out_channels, 'relu')  # 注意力机制应用于空间路径输出前
         self.down = ConvBlock(in_channels, out_channels, stride=2)

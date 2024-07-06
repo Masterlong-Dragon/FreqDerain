@@ -5,7 +5,7 @@ from torchvision.transforms import Compose, ToTensor, Normalize
 from models.derain_model import DerainModel
 from utils.metrics import calculate_psnr
 from utils.config import Config
-from data.dataset import DenoisingDataset, RainDataset
+from data.dataset import DenoisingDataset, RainDataset, Rain100LDataset
 from utils.transforms import CropWithResize
 
 def validate(model, dataloader, device):
@@ -25,7 +25,7 @@ def validate(model, dataloader, device):
             inputs = [inp.cpu() * std.view(3, 1, 1) + mean.view(3, 1, 1) for inp in inputs]
             psnr = calculate_psnr(outputs, inputs[1])
             psnr_values.append(psnr)
-            # BGR to RGB
+            # # BGR to RGB
             # original = inputs[0].squeeze().permute(1, 2, 0).numpy()
             # pred = outputs.squeeze().permute(1, 2, 0).numpy()
             # plt.figure()
@@ -53,11 +53,11 @@ def main():
     
     # 加载验证数据集
     # 注意：这里假设验证数据集包含雨天图像及其对应的干净图像
-    val_dataset = RainDataset(root_dir=config.train_data_dir, transform=transforms, crop=CropWithResize(config.crop_size, False))
+    val_dataset = Rain100LDataset(root_dir=config.test_data_dir, transform=transforms, crop=CropWithResize(config.crop_size, False))
     val_loader = DataLoader(val_dataset, batch_size=config.tbatch_size, shuffle=False)
     
     # 加载训练好的模型
-    model_path = config.checkpoint_dir + "/ghost/model_epoch_200.pth"  # 假定这是最佳模型的路径
+    model_path = config.checkpoint_dir + "/ghost/model_epoch_100.pth"  # 假定这是最佳模型的路径
     model = DerainModel(config).to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
     
