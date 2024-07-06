@@ -43,9 +43,10 @@ class UpBlockWithSkip(nn.Module):
         self.freq_block = FreqBlock(out_channels)
         self.freq_to_out_channels = nn.Conv2d(skip_channels + out_channels // 2, out_channels, kernel_size=1) if out_channels // 2 != out_channels else nn.Identity()
 
-    def forward(self, x, skip_conn):
+    def forward(self, x, skip_conn = None):
         x = self.up(x)
-        x = torch.cat([x, skip_conn], dim=1)
+        if skip_conn is not None:
+            x = torch.cat([x, skip_conn], dim=1)
         x = self.freq_to_out_channels(x)
         x = self.freq_block(x)
         return x
@@ -95,12 +96,17 @@ class Generator (nn.Module):
         self.conv1 = DownBlockWithFreq(64, 128)
         self.conv2 = DownBlockWithFreq(128, 256)
         self.conv3 = DownBlockWithFreq(256, 512)
-        self.conv4 = DownBlockWithFreq(512, 512)
-        self.FeatureSA = FreqBlock(512)  
+        # self.conv4 = DownBlockWithFreq(512, 512)
+        self.FeatureSA = nn.Sequential(
+            ConvBlock(512, 512, stride=2),
+            FreqBlock(512),
+            Self_Attn(512, 'relu')
+        )
         # up = deconv + 3*conv
         self.conv6 = UpBlockWithSkip(512, 256, 512)
         self.conv7 = UpBlockWithSkip(256, 128, 256)
         self.conv8 = UpBlockWithSkip(128, 64, 128)
+        self.conv9 = UpBlockWithSkip(64, 64, 64)
         self.outc = nn.Sequential(
             nn.ConvTranspose2d(out_channel, out_channel, 4, 2, 1),
             nn.Conv2d(out_channel, out_channel, 1, 1, 0)
@@ -201,8 +207,8 @@ class Generator (nn.Module):
         spatial_out1, freq_out1, fused1 = self.conv1(inc, freq_inc)
         spatial_out2, freq_out2, fused2 = self.conv2(spatial_out1, fused1)
         spatial_out3, freq_out3, fused3 = self.conv3(spatial_out2, fused2)
-        spatial_out4, freq_out4, fused4 = self.conv4(spatial_out3, fused3)
-        feature_sa = self.FeatureSA(fused4)  #self-attention
+        # spatial_out4, freq_out4, fused4 = self.conv4(spatial_out3, fused3)
+        feature_sa = self.FeatureSA(fused3)  #self-attention
         #up-sampling + crop
         conv6 = self.conv6(feature_sa, freq_out3)
         conv7 = self.conv7(conv6, freq_out2)
