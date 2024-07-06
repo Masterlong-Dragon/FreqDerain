@@ -16,21 +16,21 @@ class DownBlockWithFreq(nn.Module):
         # 确保额外的卷积层用于调整 FreqBlock 的输出通道数
         # self.freq_to_out_channels = nn.Conv2d(in_channels, out_channels, kernel_size=1) if in_channels != out_channels else nn.Identity()
         self.freq_block = FreqBlock(in_channels)
-        self.attn = Self_Attn(out_channels, 'relu')  # 注意力机制应用于空间路径输出前
+        # self.attn = Self_Attn(out_channels, 'relu')  # 注意力机制应用于空间路径输出前
         self.down = ConvBlock(in_channels, out_channels, stride=2)
         self.down_freq = ConvBlock(in_channels, out_channels, stride=2)
         self.fusion_conv = ConvBlock(2 * out_channels, out_channels)
 
     def forward(self, spatial_in, freq_in):
         spatial_out = self.down(spatial_in)  # 下采样
-        spatial_att = self.attn(spatial_out)  # 应用注意力
+        # spatial_att = self.attn(spatial_out)  # 应用注意力
         # 频域路径处理，先通过 FreqBlock 再下采样
         freq_out = self.freq_block(freq_in)
         # freq_out_adjusted = self.freq_to_out_channels(freq_out)  # 调整 FreqBlock 输出通道数
         freq_out_down = self.down_freq(freq_out)
         
         # 确保融合前的通道数一致
-        fused = torch.cat([spatial_att, freq_out_down], dim=1)
+        fused = torch.cat([spatial_out, freq_out_down], dim=1)
         fused = self.fusion_conv(fused)  # 融合后通过卷积调整通道至 out_channels
         
         # 返回空间路径输出、频域路径输出（用于跳连）及融合后的输出
