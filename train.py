@@ -10,13 +10,13 @@ from utils.config import Config
 from utils.logger import Logger
 from utils.transforms import CropWithResize 
 
-def adjust_learning_rate(config, epoch, optimizer):
-        target_epoch = config.epochs - config.lr_decrease_epoch
-        remain_epoch = config.epochs - epoch
-        if epoch >= config.lr_decrease_epoch:
-            lr = config.lr * remain_epoch / target_epoch
-            for param_group in optimizer.param_groups:
-                param_group['lr'] = lr
+# def adjust_learning_rate(config, epoch, optimizer):
+#         target_epoch = config.epochs - config.lr_decrease_epoch
+#         remain_epoch = config.epochs - epoch
+#         if epoch >= config.lr_decrease_epoch:
+#             lr = config.lr * remain_epoch / target_epoch
+#             for param_group in optimizer.param_groups:
+#                 param_group['lr'] = lr
 
 def train(model, dataloader, optimizer, scheduler, device):
     model.train()
@@ -30,9 +30,9 @@ def train(model, dataloader, optimizer, scheduler, device):
         loss = model.compute_loss()  # 在模型内部计算损失
         loss.backward()  # 反向传播
         optimizer.step()  # 更新权重
-        # scheduler.step()
+        scheduler.step()
         running_loss += loss.item()
-        adjust_learning_rate(model.config, i, optimizer)
+        # adjust_learning_rate(model.config, i, optimizer)
     return running_loss / (i + 1)
 
 def main():
@@ -48,11 +48,20 @@ def main():
     train_dataset = RainDataset(root_dir=config.train_data_dir, transform=transforms, crop=CropWithResize(config.crop_size))
     train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
     
+    num_epochs = config.epochs
+    last_ep = 0
     # 模型实例化
+    
     model = DerainModel(config).to(device)
+    scheduler = model.scheduler
+    
+    if config.resume_training:
+        last_ep, num_epochs = model.load(f"{config.checkpoint_dir}/{config.checkpoint_file}")
+        last_ep += 1
+        scheduler.last_epoch = last_ep
+        scheduler.T_max = num_epochs
 
     optimizer = model.optimizer
-    scheduler = model.scheduler
 
     logger = Logger(config.log_dir)
     
@@ -60,8 +69,7 @@ def main():
     # 最好的模型
     best_loss = float("inf")
     # 训练循环
-    num_epochs = config.epochs
-    for epoch in range(num_epochs):
+    for epoch in range(last_ep, num_epochs):
         print(f"Epoch {epoch+1}/{num_epochs}")
         train_loss = train(model, train_loader, optimizer, scheduler, device)
         print(f"Train Loss: {train_loss:.4f}")
@@ -75,12 +83,13 @@ def main():
         
         if train_loss < best_loss:
             best_loss = train_loss
-            torch.save(model.state_dict(), f"{config.checkpoint_dir}/best_model.pth")
+            model.save(f"{config.checkpoint_dir}/best_model.pth", epoch, num_epochs)
             print(f"Best model saved.{epoch+1}")
         
         # 模型保存逻辑可以根据需要添加
         if (epoch+1) % config.save_model_interval == 0:
-            torch.save(model.state_dict(), f"{config.checkpoint_dir}/model_epoch_{epoch+1}.pth")
+            # torch.save(model.state_dict(), f"{config.checkpoint_dir}/model_epoch_{epoch+1}.pth")
+            model.save(f"{config.checkpoint_dir}/model_epoch_{epoch+1}.pth", epoch, num_epochs)
         
 
 if __name__ == "__main__":

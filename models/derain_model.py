@@ -12,7 +12,7 @@ class DerainModel(nn.Module):
         self.config = config
         self.gen = Generator()
         if train:
-            weights_init(self.gen, 'kaiming')
+            weights_init(self.gen, 'xavier')
             # 优化器
             self.optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.gen.parameters()), lr = config.learning_rate, betas = (0.5, 0.999), weight_decay = config.weight_decay)
             self.scheduler = lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=config.epochs, eta_min=config.cosine_eta_min)
@@ -47,3 +47,19 @@ class DerainModel(nn.Module):
         generator_loss = Pixellevel_L1_Loss + 0.2*ssim_loss + 0.8*SA_perceptual_loss + 0.005*fft_loss
 
         return generator_loss
+    
+    def save(self, path, last_ep, total_ep):
+        torch.save({
+            'model': self.state_dict(),
+            'optimizer': self.optimizer.state_dict(),
+            'epoch': last_ep,
+            'total_epochs': total_ep,
+        }, path)
+        
+    def load(self, path):
+        checkpoint = torch.load(path)
+        self.load_state_dict(checkpoint['model'])
+        self.optimizer.load_state_dict(checkpoint['optimizer'])
+        last_ep = checkpoint['epoch']
+        total_ep = checkpoint['total_epochs']
+        return last_ep, total_ep

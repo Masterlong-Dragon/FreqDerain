@@ -29,4 +29,3 @@ class Config:
         self.log_interval = 100  # 打印训练状态的间隔
         self.save_model_interval = 50  # 保存模型的间隔（以epoch计）
         self.log_dir = "./logs/"
-  
