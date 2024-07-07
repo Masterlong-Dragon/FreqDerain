@@ -53,11 +53,11 @@ def main():
     
     # 加载验证数据集
     # 注意：这里假设验证数据集包含雨天图像及其对应的干净图像
-    val_dataset = Rain100LDataset(root_dir=config.test_data_dir, transform=transforms, crop=CropWithResize(config.crop_size, False))
+    val_dataset = RainDataset(root_dir=config.test_data_dir, transform=transforms, crop=CropWithResize(config.crop_size, False))
     val_loader = DataLoader(val_dataset, batch_size=config.tbatch_size, shuffle=False)
     
     # 加载训练好的模型
-    model_path = r"E:\downloads\best_model-70.pth" # 假定这是最佳模型的路径
+    model_path = r"F:\EIProject\derain\checkpoints\ghost\model_epoch_200.pth" # 假定这是最佳模型的路径
     model = DerainModel(config).to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
     

@@ -19,7 +19,7 @@ class Config:
         self.checkpoint_file = "latest.pth"  # 断点续训时的模型文件名
         
         # 数据路径
-        self.data_root = r"D:/ok"
+        self.data_root = r"F:\EIData\DerainCycleGAN\Rain100L"
         self.train_data_dir = os.path.join(self.data_root, "train")
         self.val_data_dir = os.path.join(self.data_root, "val")
         self.test_data_dir = os.path.join(self.data_root, "test")

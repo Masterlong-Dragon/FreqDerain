@@ -12,7 +12,7 @@ class DerainModel(nn.Module):
         self.config = config
         self.gen = Generator()
         if train:
-            weights_init(self.gen, 'xavier')
+            weights_init(self.gen, 'kaiming')
             # 优化器
             self.optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.gen.parameters()), lr = config.learning_rate, betas = (0.5, 0.999), weight_decay = config.weight_decay)
             self.scheduler = lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=config.epochs, eta_min=config.cosine_eta_min)
