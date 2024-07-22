@@ -20,12 +20,12 @@ class RainDataset(Dataset):
     def __init__(self, root_dir, crop=None, transform=None):
         self.rainy_dir = os.path.join(root_dir, 'rain')
         self.non_rainy_dir = os.path.join(root_dir, 'norain')
-        # self.images = [f[:-4] for f in os.listdir(self.rainy_dir) if f.endswith('.png')]
-        self.images = []
-        for i in range(1 + 3, 4 + 3):
-            for f in os.listdir(self.rainy_dir):
-                if f.endswith('_' + str(i) + '.png'):
-                    self.images.append(f[:-4])
+        self.images = [f[:-4] for f in os.listdir(self.rainy_dir) if f.endswith('.png')]
+        # self.images = []
+        # for i in range(1 + 3, 4 + 3):
+        #     for f in os.listdir(self.rainy_dir):
+        #         if f.endswith('_' + str(i) + '.png'):
+        #             self.images.append(f[:-4])
         self.crop = crop 
         self.transform = transform
 

@@ -25,7 +25,7 @@ def calculate_ssim(img1, img2, data_range=1.0):
     :param data_range: 数据范围，默认为1.0（归一化图像）
     :return: SSIM值
     """
-    img1 = img1.cpu().numpy().transpose((1, 2, 0))  # 转换为HWC
-    img2 = img2.cpu().numpy().transpose((1, 2, 0))
+    # img1 = img1.cpu().numpy().transpose((1, 2, 0))  # 转换为HWC
+    # img2 = img2.cpu().numpy().transpose((1, 2, 0))
     ssim_value = ssim(img1, img2, data_range=data_range)
     return ssim_value
