@@ -22,7 +22,7 @@ Figure 2.   The SkipNet used in stage two
 
 ### 2)   SkipNet for Image Reconstruction
 
-Following feature extraction, SkipNet [10] is employed to merge features across different scales and reconstruct the final derained image. This stage is pivotal for maintaining high-frequency details, contributing to the overall deraining performance. The structure is shown in Fig.2.
+Following feature extraction, SkipNet is employed to merge features across different scales and reconstruct the final derained image. This stage is pivotal for maintaining high-frequency details, contributing to the overall deraining performance. The structure is shown in Fig.2.
 
 ![image-20240905130253400](README.assets/image-20240905130253400.png)
 
@@ -30,7 +30,7 @@ Figure 3.   The architecture of the proposed FreqBlock
 
 ### 3)   FreqBlock: The Backbone Component
 
-The FreqBlock is a cornerstone component, serving as a conduit for integrating features of multiple domains. The features from all three domains are concatenated later, forming a multi-perspective feature tensor. It is then processed through Ghost Convolution layers [11], which efficiently increase feature representation while reducing computational complexity, culminating in the derained output. As depicted in Fig.3, the module comprises three branches.
+The FreqBlock is a cornerstone component, serving as a conduit for integrating features of multiple domains. The features from all three domains are concatenated later, forming a multi-perspective feature tensor. It is then processed through Ghost Convolution layers, which efficiently increase feature representation while reducing computational complexity, culminating in the derained output. As depicted in Fig.3, the module comprises three branches.
 
 # Test
 
